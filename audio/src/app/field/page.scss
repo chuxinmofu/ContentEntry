@@ -1,0 +1,48 @@
+.pageBox {
+  padding: 20px;
+  width: 80%;
+  margin: 0 auto;
+  .searchBox {
+    // border-bottom: 1px solid #e8e8e8;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    .searchFlexBox {
+      display: flex;
+      .lable {
+        flex: 0 0 580px;
+      }
+      .searchInput {
+        flex: 0 0 300px;
+      }
+    }
+    .menuItem {
+      display: flex;
+      width: 100%;
+      flex-wrap: wrap;
+      li {
+        flex: 1 1 400px;
+        padding: 10px;
+        border: 2px solid #e8e8e8;
+        font-size: 14px;
+      }
+      .clickSpan {
+        cursor: pointer;
+      }
+    }
+  }
+}
+.actionBox {
+  margin-bottom: 20px;
+  .ant-select {
+    width: 20%;
+  }
+}
+button.ant-btn-primary {
+  background-color: #4096ff;
+}
+.actionDiv {
+  display: flex;
+  width: 200px;
+  justify-content: space-around;
+  align-items: center;
+}
