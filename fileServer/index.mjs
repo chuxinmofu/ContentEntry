@@ -113,54 +113,32 @@ app.get("/getfile", async (req, res) => {
     });
     res.send({ code: 1, data: newObj });
   }
-
-  // const newObj = _.mergeWith(cn, en, function (objValue, srcValue, key, object, source, stack) {
-  //   return {
-  //     enUS: srcValue,
-  //     zhCN: objValue?.zhCN || objValue,
-  //   };
-  // });
 });
-app.get("/getfile/:filename", async (req, res) => {
-  const filename = req.params.filename;
-  const isMenu = menuListName[filename];
-  if (isMenu) {
-    const en = (await import("./locales/en-US/" + filename + ".js")).default;
-    const cn = (await import("./locales/zh-CN/" + filename + ".js")).default;
-
-    // for (let k in cn) {
-    //   if (cn.hasOwnProperty(k)) {
-    //     cn[k];
-    //   }
-    // }
-    let cnkeys = Object.keys(cn);
-    let newObj = {};
-    if (cnkeys.length == 0) {
-      res.send({ code: 1, data: [], msg: "没有中文数据" });
-    } else {
-      cnkeys.forEach((item) => {
-        newObj[item] = {
-          enUS: en[item] || "",
-          zhCN: cn[item],
-        };
-      });
-      res.send({ code: 1, data: newObj, msg: "" });
-    }
-
-    // let newObj = _.mergeWith(cn, en, function (objValue, srcValue, key, object, source, stack) {
-    //   // console.log(objValue, srcValue);
-    //   // console.log(key, object);
-    //   // console.log("---");
-    //   return {
-    //     enUS: srcValue,
-    //     zhCN: objValue?.zhCN || objValue,
-    //   };
-    // });
-    // console.log("---");
-  } else {
-    res.send({ code: 0, data: null, msg: "菜单不存在" });
-  }
-});
+app.get("/getfile/:filename", async (req, res) => {  
+  const filename = req.params.filename;  
+  const isMenu = menuListName[filename];  
+  
+  if (isMenu) {  
+    try {  
+      const en = (await import(`./locales/en-US/${filename}.js`)).default;  
+      const cn = (await import(`./locales/zh-CN/${filename}.js`)).default;  
+  
+      let newObj = {};  
+      Object.keys(cn).forEach((item) => {  
+        newObj[item] = {  
+          enUS: en[item] || "",  
+          zhCN: cn[item],  
+        };  
+      });  
+  
+      res.status(200).send({ code: 0, data: newObj, msg: "数据获取成功" });  
+    } catch (error) {  
+      res.status(500).send({ code: -1, msg: "内部服务器错误" });  
+    }  
+  } else {  
+    res.status(404).send({ code: 0, data: null, msg: "菜单不存在" });  
+  }  
+});  
 app.get("/getmenu", (req, res) => {
   res.json(menuListName);
 });
