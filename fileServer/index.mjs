@@ -97,48 +97,54 @@ app.post("/addnew", async (req, res) => {
 });
 
 app.get("/getfile", async (req, res) => {
-  const cn = (await import(`./locales/zh-CN.js`)).default;
-  const en = (await import(`./locales/en-US.js`)).default;
+  try {
+    const cn = (await import(`./locales/zh-CN.js`)).default;
+    const en = (await import(`./locales/en-US.js`)).default;
 
-  let cnkeys = Object.keys(cn);
-  let newObj = {};
-  if (cnkeys.length == 0) {
-    res.send({ code: 1, data: [], msg: "没有中文数据" });
-  } else {
-    cnkeys.forEach((item) => {
-      newObj[item] = {
+    if (!cn || Object.keys(cn).length === 0) {
+      res.status(400).send({ code: 0, msg: "没有中文数据" });
+      return;
+    }
+
+    const newObj = Object.keys(cn).reduce((acc, item) => {
+      acc[item] = {
         enUS: en[item] || "",
         zhCN: cn[item],
       };
-    });
-    res.send({ code: 1, data: newObj });
+      return acc;
+    }, {});
+
+    res.status(200).send({ code: 0, data: newObj, msg: "数据获取成功" });
+  } catch (error) {
+    console.error("Error loading locales:", error);
+    res.status(500).send({ code: -1, msg: "内部服务器错误" });
   }
 });
-app.get("/getfile/:filename", async (req, res) => {  
-  const filename = req.params.filename;  
-  const isMenu = menuListName[filename];  
-  
-  if (isMenu) {  
-    try {  
-      const en = (await import(`./locales/en-US/${filename}.js`)).default;  
-      const cn = (await import(`./locales/zh-CN/${filename}.js`)).default;  
-  
-      let newObj = {};  
-      Object.keys(cn).forEach((item) => {  
-        newObj[item] = {  
-          enUS: en[item] || "",  
-          zhCN: cn[item],  
-        };  
-      });  
-  
-      res.status(200).send({ code: 0, data: newObj, msg: "数据获取成功" });  
-    } catch (error) {  
-      res.status(500).send({ code: -1, msg: "内部服务器错误" });  
-    }  
-  } else {  
-    res.status(404).send({ code: 0, data: null, msg: "菜单不存在" });  
-  }  
-});  
+app.get("/getfile/:filename", async (req, res) => {
+  const filename = req.params.filename;
+  const isMenu = menuListName[filename];
+
+  if (isMenu) {
+    try {
+      const en = (await import(`./locales/en-US/${filename}.js`)).default;
+      const cn = (await import(`./locales/zh-CN/${filename}.js`)).default;
+
+      let newObj = {};
+      Object.keys(cn).forEach((item) => {
+        newObj[item] = {
+          enUS: en[item] || "",
+          zhCN: cn[item],
+        };
+      });
+
+      res.status(200).send({ code: 0, data: newObj, msg: "数据获取成功" });
+    } catch (error) {
+      res.status(500).send({ code: -1, msg: "内部服务器错误" });
+    }
+  } else {
+    res.status(404).send({ code: 0, data: null, msg: "菜单不存在" });
+  }
+});
 app.get("/getmenu", (req, res) => {
   res.json(menuListName);
 });
