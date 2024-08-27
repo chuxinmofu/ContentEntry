@@ -1,53 +1,47 @@
-// const express = require("express");
 import express from "express";
 import mfs from "fs";
 import http from "http";
-// import path from "path";
 import cors from "cors";
 import menuListName from "./menuconfig.js";
 import bodyParser from "body-parser";
-// import _ from "lodash";
 const fs = mfs.promises;
 
 const app = express();
 const port = 3100;
 app.use(cors());
 app.use(bodyParser.json());
-// 设置静态文件目录
+
 app.use("/static", express.static("locales"));
 
 app.post("/delete", async (req, res) => {
   const { stringID, menuKey } = req.body;
-  if (!!stringID && !!menuKey) {
-    const isMenu = menuListName[menuKey];
-    if (!isMenu) {
-      res.send({ code: 0, data: null, msg: "菜单不存在" });
-      return false;
-    }
+
+  if (!stringID || !menuKey) {
+    return res.status(400).json({ code: 1, msg: "参数错误" });
+  }
+
+  const isMenu = menuListName[menuKey];
+  if (!isMenu) {
+    return res.status(400).json({ code: 1, data: null, msg: "菜单不存在" });
+  }
+
+  try {
+
     let en = (await import("./locales/en-US/" + menuKey + ".js")).default;
     let cn = (await import("./locales/zh-CN/" + menuKey + ".js")).default;
 
     delete en[menuKey + "." + stringID];
     delete cn[menuKey + "." + stringID];
 
-    let content = JSON.stringify(en, null, 2);
-    content = "export default " + content;
-    try {
-      await fs.writeFile("./locales/en-US/" + menuKey + ".js", content, "utf8");
-    } catch (error) {
-      res.send({ code: 0, msg: error });
-    }
+    const enContent = `export default ${JSON.stringify(en, null, 2)}`;
+    await fs.writeFile("./locales/en-US/" + menuKey + ".js", enContent, "utf8");
 
-    let contentcn = JSON.stringify(cn, null, 2);
-    contentcn = "export default " + contentcn;
-    try {
-      await fs.writeFile("./locales/zh-CN/" + menuKey + ".js", contentcn, "utf8");
-    } catch (error) {
-      res.send({ code: 0, msg: error });
-    }
-    res.send({ code: 1, msg: "删除成功" });
-  } else {
-    res.send({ code: 0, msg: "参数错误" });
+    const cnContent = `export default ${JSON.stringify(cn, null, 2)}`;
+    await fs.writeFile("./locales/zh-CN/" + menuKey + ".js", cnContent, "utf8");
+
+    res.json({ code: 0, msg: "删除成功" });
+  } catch (error) {
+    res.status(500).json({ code: 1, msg: error.message || "内部服务器错误" });
   }
 });
 
@@ -82,7 +76,7 @@ app.post("/addnew", async (req, res) => {
       fs.writeFile("./locales/en-US/" + menuKey + ".js", enContent, "utf8"),
       fs.writeFile("./locales/zh-CN/" + menuKey + ".js", cnContent, "utf8")
     ]);
-    
+
     res.json({ code: 0, msg: "添加成功" });
   } catch (error) {
     res.status(500).json({ code: 1, msg: error.message || "内部服务器错误" });
@@ -113,6 +107,7 @@ app.get("/getfile", async (req, res) => {
     res.status(500).send({ code: -1, msg: "内部服务器错误" });
   }
 });
+
 app.get("/getfile/:filename", async (req, res) => {
   const filename = req.params.filename;
   const isMenu = menuListName[filename];
@@ -138,6 +133,7 @@ app.get("/getfile/:filename", async (req, res) => {
     res.status(404).send({ code: 0, data: null, msg: "菜单不存在" });
   }
 });
+
 app.get("/getmenu", (req, res) => {
   res.json(menuListName);
 });
