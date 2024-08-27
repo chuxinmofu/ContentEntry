@@ -50,49 +50,42 @@ app.post("/delete", async (req, res) => {
     res.send({ code: 0, msg: "参数错误" });
   }
 });
-app.post("/addnew", async (req, res) => {
-  // console.log(req.body);
-  const { stringID, zhCN, enUS, menuKey, stringID_back, modalType } = req.body;
 
+app.post("/addnew", async (req, res) => {
+  const { stringID, zhCN, enUS, menuKey, modalType } = req.body;
   const isMenu = menuListName[menuKey];
+
   if (!isMenu) {
-    res.send({ code: 0, data: null, msg: "菜单不存在" });
-    return false;
+    return res.status(400).json({ code: 1, data: null, msg: "菜单不存在" });
   }
-  if (!!stringID && !!zhCN && !!enUS && !!menuKey) {
+
+  if (!stringID || !zhCN || !enUS || !menuKey) {
+    return res.status(400).json({ code: 1, msg: "参数错误" });
+  }
+
+  try {
     let en = (await import("./locales/en-US/" + menuKey + ".js")).default;
     let cn = (await import("./locales/zh-CN/" + menuKey + ".js")).default;
-    // console.log("en = ", en);
-    // console.log("cn = ", cn);
-    if (modalType == "edit" && stringID != stringID_back) {
-      //做了修改动作
-      delete en[menuKey + "." + stringID_back];
-      delete cn[menuKey + "." + stringID_back];
+
+    if (modalType === "edit") {
+      delete en[menuKey + "." + stringID];
+      delete cn[menuKey + "." + stringID];
     }
 
     en[menuKey + "." + stringID] = enUS;
-
-    let content = JSON.stringify(en, null, 2);
-    content = "export default " + content;
-    // let menuKey1 = "cc";
-    try {
-      await fs.writeFile("./locales/en-US/" + menuKey + ".js", content, "utf8");
-    } catch (error) {
-      res.send({ code: 0, msg: error });
-    }
-
     cn[menuKey + "." + stringID] = zhCN;
 
-    let contentcn = JSON.stringify(cn, null, 2);
-    contentcn = "export default " + contentcn;
-    try {
-      await fs.writeFile("./locales/zh-CN/" + menuKey + ".js", contentcn, "utf8");
-    } catch (error) {
-      res.send({ code: 0, msg: error });
-    }
-    res.send({ code: 1, msg: "添加成功" });
-  } else {
-    res.send({ code: 0, msg: "参数错误" });
+    const enContent = `export default ${JSON.stringify(en, null, 2)}`;
+    const cnContent = `export default ${JSON.stringify(cn, null, 2)}`;
+
+    await Promise.all([
+      fs.writeFile("./locales/en-US/" + menuKey + ".js", enContent, "utf8"),
+      fs.writeFile("./locales/zh-CN/" + menuKey + ".js", cnContent, "utf8")
+    ]);
+    
+    res.json({ code: 0, msg: "添加成功" });
+  } catch (error) {
+    res.status(500).json({ code: 1, msg: error.message || "内部服务器错误" });
   }
 });
 
